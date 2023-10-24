@@ -9,7 +9,7 @@ EBS
 
 # Overview
 ``EBS`` 
-Collecting of algrithms based on [cite:mnih] paper, adapted to absolute errors and implemented in Python class structe.
+Collecting of algorithms based on [cite:mnih] paper, adapted to absolute errors and implemented in Python class structe.
 
 # Documentation
 See `tutorial.ipynb` file for usage of the package.
