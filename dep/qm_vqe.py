@@ -18,7 +18,8 @@ def vqe_g(hamiltonian_coeff):
     alpha = 0.1  # Gradient descent
     eps = 0.1
     eps_bern = 0.01
-    max_sample = 1*10**5  # Max number of samples for EBS
+    max_sample = 10**8  # Max number of samples for EBS
+    range_g = 2*np.sum(np.abs(hamiltonian_coeff[2:]))
     n = 500
     '''
     Initialization of Arrays and Variables 
@@ -35,10 +36,10 @@ def vqe_g(hamiltonian_coeff):
     arr_est_var = []
     arr_par1 = []
     arr_steps = []
-    arr_l1 = []
     arr_höf = []
     flag = False
     arr_max_flag = []
+    
     for i in range(n):
           
         # set states to |01>
@@ -56,31 +57,22 @@ def vqe_g(hamiltonian_coeff):
         Loops for EBS algorithm
         '''
         # Resets EBS every outer loop iteration
-        ebs = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=3.0636)
-        #ebs_l1 = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=3.0636)
-        ebs_shift_plus = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=3.0636)
-        ebs_shift_minus = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=3.0636)
+        ebs = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=range_g)
+        ebs_shift_plus = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=range_g)
+        ebs_shift_minus = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=range_g)
 
         '''
         Prepare Samples for energy and gradient estimatation
         '''
-        #samples_normal = get_h2_sample(state_normal)
-
-        # Naive
+        
+        # EBS
         while ebs.cond_check():
-            ebs.add_sample(h2_measure(state_normal,g))
+            ebs.add_sample(h2_measure(state_normal,hamiltonian_coeff[1:]))
             if ebs.inner_cond_check():
                 ebs.update_ct()
             if ebs.get_step() > max_sample:
                 break  
-        # # L1
-        # it_n = 0
-        # while ebs_l1.cond_check():
-        #     ebs_l1.add_sample(samples_normal[it_n])
-        #     it_n += 1
-        #     if ebs_l1.inner_cond_check():
-        #         ebs_l1.update_ct()
-
+            
         # Saving values
         it_normal = 3*ebs.get_step()
         #it_l1 = ebs_l1.get_step()
@@ -116,8 +108,7 @@ def vqe_g(hamiltonian_coeff):
         arr_est_var.append(est_variance)
         arr_par1.append(par1)
         arr_steps.append(it_normal)
-        arr_höf.append(hamiltonian_coeff(0.1,3.0636,0.01))
-        arr_l1.append(0)
+        arr_höf.append(hoeffding_bound(0.1,range_g,eps_bern))
         arr_max_flag.append(flag*1)
         
         # Estimate the Gradient via SPSA method
@@ -130,15 +121,16 @@ def vqe_g(hamiltonian_coeff):
             break
         if np.abs(energy - expected_value(np.array([0,1,0,0]),h2_op(hamiltonian_coeff[1:]))) <= 0.01:
             flag = True
-        return arr_par1, arr_energy,arr_var, arr_est_energy, arr_est_var, arr_steps, arr_höf,arr_l1,arr_max_flag
+    return arr_par1, arr_energy,arr_var, arr_est_energy, arr_est_var, arr_steps, arr_höf,arr_max_flag
 
-def vqe_eps(eps_bern):
+def vqe_eps(eps_0):
     g = [0.2252, 0.3435, -0.4347,0.5716,0.0910, 0.0910]
     par1 = -0.1  # Initial parameters
     alpha = 0.1  # Gradient descent
     eps = 0.1
-    eps_bern = eps_bern
-    max_sample = 5*10**6  # Max number of samples for EBS
+    eps_bern = eps_0
+    range_g = 2*np.sum(np.abs(g[1:]))
+    max_sample = 10**8  # Max number of samples for EBS
     n = 500
     '''
     Initialization of Arrays and Variables 
@@ -159,6 +151,7 @@ def vqe_eps(eps_bern):
     arr_höf = []
     flag = False
     arr_max_flag = []
+    
     for i in range(n):
           
         # set states to |01>
@@ -176,15 +169,13 @@ def vqe_eps(eps_bern):
         Loops for EBS algorithm
         '''
         # Resets EBS every outer loop iteration
-        ebs = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=3.0636)
-        #ebs_l1 = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=3.0636)
-        ebs_shift_plus = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=3.0636)
-        ebs_shift_minus = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=3.0636)
+        ebs = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=range_g)
+        ebs_shift_plus = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=range_g)
+        ebs_shift_minus = bernstein(delta=0.1, epsilon=eps_bern, range_of_rndvar=range_g)
 
         '''
         Prepare Samples for energy and gradient estimatation
         '''
-        #samples_normal = get_h2_sample(state_normal)
 
         # Naive
         while ebs.cond_check():
@@ -193,14 +184,7 @@ def vqe_eps(eps_bern):
                 ebs.update_ct()
             if ebs.get_step() > max_sample:
                 break  
-        # # L1
-        # it_n = 0
-        # while ebs_l1.cond_check():
-        #     ebs_l1.add_sample(samples_normal[it_n])
-        #     it_n += 1
-        #     if ebs_l1.inner_cond_check():
-        #         ebs_l1.update_ct()
-
+            
         # Saving values
         it_normal = 3*ebs.get_step()
         #it_l1 = ebs_l1.get_step()
@@ -236,8 +220,7 @@ def vqe_eps(eps_bern):
         arr_est_var.append(est_variance)
         arr_par1.append(par1)
         arr_steps.append(it_normal)
-        arr_höf.append(hoeffding_bound(0.1,3.0636,0.01))
-        arr_l1.append(0)
+        arr_höf.append(hoeffding_bound(0.1,range_g,eps_bern))
         arr_max_flag.append(flag*1)
         
         # Estimate the Gradient via SPSA method
@@ -248,7 +231,7 @@ def vqe_eps(eps_bern):
         
         if flag:
             break
-        if np.abs(energy - expected_value(np.array([0,1,0,0]),h2_op(g))) <= 0.01:
+        if np.abs(energy - expected_value(np.array([0,1,0,0]),h2_op(g))) <= eps_bern:
             flag = True
             
-        return arr_par1, arr_energy,arr_var, arr_est_energy, arr_est_var, arr_steps, arr_höf,arr_l1,arr_max_flag
+    return arr_par1, arr_energy,arr_var, arr_est_energy, arr_est_var, arr_steps, arr_höf,arr_max_flag

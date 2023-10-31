@@ -12,7 +12,7 @@ EBS
 Collecting of algorithms based on [cite:mnih] paper, adapted to absolute errors and implemented in Python class structe.
 
 # Documentation
-See `tutorial.ipynb` file for usage of the package.
+See `tutorial.ipynb`.
 
 # Python Dependencies
 `EBS` depends on a plethora of Python scientific libraries which can be found in `requirements.txt`.
