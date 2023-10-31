@@ -119,7 +119,7 @@ def vqe_g(hamiltonian_coeff):
         
         if flag:
             break
-        if np.abs(energy - expected_value(np.array([0,1,0,0]),h2_op(hamiltonian_coeff[1:]))) <= 0.01:
+        if np.abs(energy - np.linalg.eigvalsh(h2_op(hamiltonian_coeff[1:]))[0]) <= 0.01:
             flag = True
     return arr_par1, arr_energy,arr_var, arr_est_energy, arr_est_var, arr_steps, arr_höf,arr_max_flag
 
@@ -231,7 +231,7 @@ def vqe_eps(eps_0):
         
         if flag:
             break
-        if np.abs(energy - expected_value(np.array([0,1,0,0]),h2_op(g))) <= eps_bern:
+        if np.abs(energy - np.linalg.eigvalsh(h2_op(g))[0]) <= eps_bern:
             flag = True
             
     return arr_par1, arr_energy,arr_var, arr_est_energy, arr_est_var, arr_steps, arr_höf,arr_max_flag
