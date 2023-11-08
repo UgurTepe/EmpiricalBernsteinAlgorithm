@@ -44,6 +44,9 @@ class ebs_simple():
         self.cons = 3/((delta*(self.p-1))/self.p)
         self.welf = Welford()
 
+    def inner_cond_check(self):
+        pass
+
     # Should add sample to self.samples and should update all the parameters
     def add_sample(self, sample):
         # Insert new sample
@@ -105,7 +108,6 @@ class ebs_simple():
     def get_step(self):
         return self.current_step
 
-
 class ebs():
     # Initlialize Bernstein with epsilon and delta
     def __init__(self, delta=0.1, epsilon=0.1, range_of_rndvar=1):
@@ -125,6 +127,9 @@ class ebs():
         self.current_step = 1
         self.cons = 3/((delta*(self.p-1))/self.p)
         self.welf = Welford()
+
+    def inner_cond_check(self):
+        pass
 
     # Should add sample to self.samples and should update all the parameters
     def add_sample(self, sample):
@@ -196,7 +201,6 @@ class ebs():
     def get_step(self):
         return self.current_step
 
-
 class nas():
     # Initlialize Bernstein with epsilon and delta
     def __init__(self, delta=0.1, epsilon=0.1, range_of_rndvar=1):
@@ -209,6 +213,9 @@ class nas():
         self.running_variance = [0]
         self.ct = []
         self.current_step = 1
+
+    def inner_cond_check(self):
+        pass
 
     # Should add sample to self.samples and should update all the parameters
     def add_sample(self, sample):
@@ -276,6 +283,8 @@ class eba():
         self.current_step = 1
         self.cons = 3/((delta*(self.p-1))/self.p)
         self.welf = Welford()
+    def inner_cond_check(self):
+        pass
 
     # Should add sample to self.samples and should update all the parameters
     def add_sample(self, sample):
@@ -355,6 +364,8 @@ class nas_abs():
         self.running_variance = [0]
         self.ct = []
         self.current_step = 1
+    def inner_cond_check(self):
+        pass
 
     # Should add sample to self.samples and should update all the parameters
     def add_sample(self, sample):
