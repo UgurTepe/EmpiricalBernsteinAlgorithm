@@ -283,6 +283,7 @@ class eba():
         self.current_step = 1
         self.cons = 3/((delta*(self.p-1))/self.p)
         self.welf = Welford()
+
     def inner_cond_check(self):
         pass
 
@@ -320,17 +321,26 @@ class eba():
             return False
 
     # Just a function to calculate c_t for a given time t
-    def calc_ct(self, time):
-        ln_constant = np.log(self.cons, dtype=np.float64)/time
-        ln_vari = self.p*np.log(time, dtype=np.float64)/time
+    # def calc_ct(self, time):
+    #     ln_constant = np.log(self.cons, dtype=np.float64)/time
+    #     ln_vari = self.p*np.log(time, dtype=np.float64)/time
+    #     ln_compl = (ln_constant+ln_vari)
+    #     result = (
+    #         np.sqrt(2*self.running_variance[-1]*ln_compl) + (3*self.range_of_rndvar*ln_compl))
+    #     return result
+
+    def calc_ct(self):
+        ln_constant = np.log(self.cons, dtype=np.float64)/self.current_step
+        ln_vari = self.p*np.log(self.current_step,
+                                dtype=np.float64)/self.current_step
         ln_compl = (ln_constant+ln_vari)
         result = (
             np.sqrt(2*self.running_variance[-1]*ln_compl) + (3*self.range_of_rndvar*ln_compl))
         return result
-
+    
     def update_ct(self):
         # Update ct
-        self.ct.append(self.calc_ct(self.current_step))
+        self.ct.append(self.calc_ct())
 
     def get_ct(self):
         return np.asarray(self.ct)
