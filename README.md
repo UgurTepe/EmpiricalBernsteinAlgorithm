@@ -19,12 +19,12 @@ See `tutorial.ipynb`.
 # Python Dependencies
 `EBS` depends on a plethora of Python scientific libraries which can be found in the [requirements.txt](/requirements.txt) file.
 For the exmamples more packages may be needed, see [requirements_examples.txt](/requirements_examples.txt) file.
-# License
-This project is covered under the **Apache 2.0 License**.
 
-# Importing own functions
+# Example
+Here is a quick example of how to use a EBS algorithm.
 
 ```python
+# Importing packages
 import numpy, algorithms
 a = 0
 b = 1
@@ -42,7 +42,6 @@ print('No. Samples:',round(ebs.get_step()))
 >>> Estimate: 0.5002286837992509
 >>> No. Samples: 2254
 ```
+# License
+This project is covered under the **Apache 2.0 License**.
 
-# Example
-Here is a quick example of how to use a EBS algorithm.
-import numpy as np
