@@ -3,11 +3,11 @@ import numpy as np
                 A collection of various stopping algorithm.
  ------------ ------------ Relative Accuracy  ------------ ------------
 ebs_simple   : basic ebs algorithm
-ebs          : upper and lower bound version, improved ver. of ebs_simple
+ebs_dual     : upper and lower bound version, improved ver. of ebs_simple
 
 nas          : stopping algorithm based on Höffding's inequality
  ------------ ------------ Absolute Accuracy  ------------ ------------
-eba          : basic ebs algorithm
+eba_simple   : basic ebs algorithm
 eba_geo      : geometric sampling, improved ver. eba
 eba_geo_marg : geometric samp. + mid-interval stopping, improved ver. eba_geo
 
@@ -231,7 +231,7 @@ class ebs_simple():
         return self.current_step
 
 
-class ebs():
+class ebs_dual():
     """
     Empirical Bernstein Algorithm (EBS) class.
 
@@ -554,7 +554,7 @@ class nas():
         return self.current_step
 
 
-class eba():
+class eba_simple():
     """
     Empirical Bernstein Algorithm (EBA) class.
 

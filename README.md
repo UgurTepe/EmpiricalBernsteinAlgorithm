@@ -35,8 +35,8 @@ ebs = eba_geo_marg(epsilon=epsilon,delta=delta,range_of_rndvar=b - a)
 
 while ebs.cond_check():
     ebs.add_sample(np.random.uniform(a,b))
-    if ebs.inner_cond_check():
-        ebs.update_ct()
+    ebs.inner_cond_check()
+
 print('Estimate: ',ebs.get_estimate())
 print('No. Samples:',round(ebs.get_step()))
 >>> Estimate: 0.5002286837992509
