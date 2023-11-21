@@ -84,12 +84,12 @@ class ebs_simple():
 
     Parameters:
     - delta (float): The confidence parameter. Default is 0.1.
-    - epsilon (float): The termination parameter. Default is 0.1.
+    - epsilon (float): Accuracy parameter. Default is 0.1.
     - range_of_rndvar (float): The range of the random variable. Default is 1.
 
     Attributes:
     - delta (float): The confidence parameter.
-    - epsilon (float): The termination parameter.
+    - epsilon (float): Accuracy parameter.
     - range_of_rndvar (float): The range of the random variable.
     - samples (list): List to store the samples.
     - running_mean (list): List to store the running mean.
@@ -119,7 +119,7 @@ class ebs_simple():
 
         Parameters:
         - delta (float): The confidence parameter. Default is 0.1.
-        - epsilon (float): The termination parameter. Default is 0.1.
+        - epsilon (float): Accuracy parameter. Default is 0.1.
         - range_of_rndvar (float): The range of the random variable. Default is 1.
         """
         self.delta = delta
@@ -136,9 +136,6 @@ class ebs_simple():
         self.welf = Welford()
 
     def inner_cond_check(self):
-        """
-        Placeholder method.
-        """
         pass
 
     def add_sample(self, sample):
@@ -608,6 +605,9 @@ class eba():
         self.welf = Welford()
 
     def inner_cond_check(self):
+        """
+        Placeholder method for inner conditional check.
+        """
         pass
 
     def add_sample(self, sample):
@@ -756,7 +756,7 @@ class nas_abs():
 
         Parameters:
         - delta (float): The confidence parameter for the algorithm. Default is 0.1.
-        - epsilon (float): The termination threshold for the algorithm. Default is 0.1.
+        - epsilon (float): Accuracy threshold for the algorithm. Default is 0.1.
         - range_of_rndvar (float): The range of the random variable. Default is 1.
         """
         self.delta = delta
@@ -853,20 +853,19 @@ class nas_abs():
         """
         return self.current_step
 
-
 class eba_geo():
     """
     Empirical Bernstein Algorithm (EBA) for geometrically decreasing step sizes.
 
     Parameters:
     - delta (float): The confidence parameter. Default is 0.1.
-    - epsilon (float): The termination threshold. Default is 0.1.
+    - epsilon (float): Accuracy threshold. Default is 0.1.
     - range_of_rndvar (float): The range of the random variable. Default is 1.
     - beta (float): The geometric decay factor. Default is 1.1.
 
     Attributes:
     - delta (float): The confidence parameter.
-    - epsilon (float): The termination threshold.
+    - epsilon (float): Accuracy threshold.
     - range_of_rndvar (float): The range of the random variable.
     - samples (list): List of samples.
     - running_mean (list): List of running means.
@@ -899,7 +898,7 @@ class eba_geo():
 
         Parameters:
         - delta (float): The confidence parameter. Default is 0.1.
-        - epsilon (float): The termination threshold. Default is 0.1.
+        - epsilon (float): Accuracy threshold. Default is 0.1.
         - range_of_rndvar (float): The range of the random variable. Default is 1.
         - beta (float): The geometric decay factor. Default is 1.1.
         """
@@ -961,9 +960,11 @@ class eba_geo():
         Check if the inner loop condition is satisfied.
 
         Returns:
-        - bool: True if the condition is satisfied, False otherwise.
+        - none
+        updates ct if the condition is satisfied
         """
-        return self.current_t > np.floor(self.beta**self.current_k)
+        if self.current_t > np.floor(self.beta**self.current_k):
+            self.update_ct()
 
     def calc_ct(self):
         """
@@ -1042,13 +1043,13 @@ class eba_geo_marg():
 
     Parameters:
     - delta (float): The confidence parameter. Default is 0.1.
-    - epsilon (float): The termination threshold. Default is 0.1.
+    - epsilon (float): Accuracy threshold. Default is 0.1.
     - range_of_rndvar (float): The range of the random variable. Default is 1.
     - beta (float): The scaling factor. Default is 1.1.
 
     Attributes:
     - delta (float): The confidence parameter.
-    - epsilon (float): The termination threshold.
+    - epsilon (float): Accuracy threshold.
     - range_of_rndvar (float): The range of the random variable.
     - samples (list): The list of samples.
     - running_mean (list): The list of running means.
@@ -1128,12 +1129,14 @@ class eba_geo_marg():
 
     def inner_cond_check(self):
         """
-        Checks if the inner loop condition is met.
+        Check if the inner loop condition is satisfied.
 
         Returns:
-        - bool: True if the condition is met, False otherwise.
+        - none
+        updates ct if the condition is satisfied
         """
-        return self.current_t > np.floor(self.beta**self.current_k)
+        if self.current_t > np.floor(self.beta**self.current_k):
+            self.update_ct()
 
     def calc_ct(self):
         """
