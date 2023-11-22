@@ -22,7 +22,7 @@ arr_par1, arr_energy,arr_var, arr_est_energy, arr_est_var, arr_steps, arr_höf,a
 # Default g --> d = 0.75
 g = [0.2252, 0.3435, -0.4347,0.5716,0.0910, 0.0910]
 
-plt.plot(arr_par1, arr_energy,'s-' ,label='Energy')
+plt.plot(arr_par1, arr_est_energy,'.-' ,label='Energy')
 plt.xlabel(r'$\theta$')
 plt.ylabel(r'Energy (Hartee)')
 plt.axhline(y=np.linalg.eigvalsh(h2_op(g))[0], color='r',linestyle = '--')

@@ -44,14 +44,14 @@ def vqe_g(hamiltonian_coeff):
           
         # set states to |01>
         # Apply circuit on state
-        state_normal = h2(par1, np.array([0, 1, 0, 0]))
+        state_normal = circ(par1)
 
         # SPSA method
         rnd1 = np.random.choice([-1, 1])
-        state_shift_plus = h2(
-            par1 + eps*rnd1, np.array([0, 1, 0, 0]))
-        state_shift_minus = h2(
-        par1 - eps*rnd1, np.array([0, 1, 0, 0]))
+        state_shift_plus = circ(
+            par1 + eps*rnd1)
+        state_shift_minus = circ(
+        par1 - eps*rnd1)
 
         '''
         Loops for EBS algorithm
@@ -132,6 +132,7 @@ def vqe_eps(eps_0):
     range_g = 2*np.sum(np.abs(g[1:]))
     max_sample = 10**8  # Max number of samples for EBS
     n = 500
+    fln = 0
     '''
     Initialization of Arrays and Variables 
     '''
@@ -156,14 +157,14 @@ def vqe_eps(eps_0):
           
         # set states to |01>
         # Apply circuit on state
-        state_normal = h2(par1, np.array([0, 1, 0, 0]))
+        state_normal = circ(par1)
 
         # SPSA method
         rnd1 = np.random.choice([-1, 1])
-        state_shift_plus = h2(
-            par1 + eps*rnd1, np.array([0, 1, 0, 0]))
-        state_shift_minus = h2(
-        par1 - eps*rnd1, np.array([0, 1, 0, 0]))
+        state_shift_plus = circ(
+            par1 + eps*rnd1)
+        state_shift_minus = circ(
+        par1 - eps*rnd1)
 
         '''
         Loops for EBS algorithm
@@ -229,9 +230,10 @@ def vqe_eps(eps_0):
         # Updating the Parameters via Gradient Descent method
         par1 -= alpha*grad1
         
-        if flag:
+        if flag and fln == 5:
             break
         if np.abs(energy - np.linalg.eigvalsh(h2_op(g))[0]) <= eps_bern:
             flag = True
+            fln += 1
             
     return arr_par1, arr_energy,arr_var, arr_est_energy, arr_est_var, arr_steps, arr_höf,arr_max_flag
