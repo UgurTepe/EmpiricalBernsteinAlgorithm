@@ -14,7 +14,7 @@ EBS
 Collecting of algorithms based on this [[paper](https://www.cs.toronto.edu/~vmnih/docs/ebstop.pdf)], adapted to absolute errors and implemented in a Python class structure.
 
 # Documentation
-See `tutorial.ipynb`.
+See [notebook](/tutorial.ipynb) or inside code.
 
 # Python Dependencies
 `EBS` depends on a plethora of Python scientific libraries which can be found in the [requirements.txt](/requirements.txt) file.
