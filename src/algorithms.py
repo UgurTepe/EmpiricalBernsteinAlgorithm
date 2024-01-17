@@ -924,8 +924,7 @@ class eba_geo():
         Parameters:
         - sample: The sample to be added.
         """
-        # Update current step
-        self.current_t = self.current_t + 1
+
 
         # Insert new sample
         self.samples.append(sample)
@@ -940,7 +939,9 @@ class eba_geo():
         # Running variance
         self.welf.update(sample)
         self.running_variance.append(np.square(self.welf.std))
-
+        # Update current step
+        self.current_t = self.current_t + 1
+        
     def cond_check(self):
         """
         Check if the EBA algorithm should stop.
@@ -1105,14 +1106,13 @@ class eba_geo_marg():
         Parameters:
         - sample (float): The sample value.
         """
-        self.current_t = self.current_t + 1
         self.samples.append(sample)
         self.sample_sum += sample
         cur_mean = np.divide(self.sample_sum, self.current_t)
         self.running_mean.append(cur_mean)
         self.welf.update(sample)
         self.running_variance.append(np.square(self.welf.std))
-
+        self.current_t = self.current_t + 1
     def cond_check(self):
         """
         Checks if the EBA should stop or continue.
