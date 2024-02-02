@@ -1152,9 +1152,9 @@ class eba_geo_marg():
         Updates the c_t value.
         """
         self.current_k += 1
-        self.alpha = np.ceil(self.beta**self.current_k) / \
-            np.ceil(self.beta**self.current_k-1)
-        self.x = -self.alpha*np.log(self.c/3*(self.current_k**self.p))
+        self.alpha = np.floor(self.beta**self.current_k) / \
+            np.floor(self.beta**(self.current_k-1))
+        self.x = -self.alpha*np.log(self.c/(3*(self.current_k**self.p)))
         self.ct.append(self.calc_ct())
 
     def get_ct(self):
