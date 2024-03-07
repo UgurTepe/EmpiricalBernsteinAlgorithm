@@ -1066,6 +1066,7 @@ class eba_geo_marg():
     - current_t (int): The current t value.
     - cons (float): The constant value.
     - welf (Welford): The Welford object for calculating running variance.
+    - next_batch_size (int): the size of the next expected batch of samples
 
     Methods:
     - add_sample(sample): Adds a sample to the list of samples and updates the parameters.
@@ -1097,6 +1098,10 @@ class eba_geo_marg():
         self.current_t = 1
         self.cons = 3/((delta*(self.p-1))/self.p)
         self.welf = Welford()
+    
+    @property
+    def next_batch_size(self):
+        return int(np.ceil(self.beta**self.current_k))
 
     def add_sample(self, sample):
         """
@@ -1120,8 +1125,8 @@ class eba_geo_marg():
         - bool: True if EBA should continue, False if EBA should stop.
         """
         error = "Premature calling of condition check: should have at least {} samples, but only {} were given."
-        assert self.current_t > self.beta**self.current_k, error.format(np.ceil(self.beta**self.current_k),self.current_t)
-        return self.current_k == 0 or self.ct[-1] > self.epsilon:
+        assert self.current_t >= self.beta**self.current_k, error.format(np.ceil(self.beta**self.current_k),self.current_t)
+        return self.current_k == 0 or self.ct[-1] > self.epsilon
 
     def calc_ct(self):
         """
