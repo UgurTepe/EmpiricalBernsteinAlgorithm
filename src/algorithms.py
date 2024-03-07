@@ -1179,15 +1179,12 @@ class eba_geo_marg():
         self.delta = delta
         self.epsilon = epsilon
         self.range_of_rndvar = range_of_rndvar
-        self.samples = []
-        self.running_mean = [0]
-        self.sample_sum = 0
-        self.running_variance = [0]
+        self.batch_size_arr = []
+        self.mean_arr = []
         self.ct = []
         self.p = 1.1
         self.c = self.delta*(self.p-1)/self.p
         self.beta = beta
-        self.x = 0
         self.alpha = 0
         self.current_k = 0
         self.current_t = 1
@@ -1199,19 +1196,16 @@ class eba_geo_marg():
         return int(np.ceil(self.beta**self.current_k))
 
     def add_sample(self, sample):
-        """
-        Adds a sample to the list of samples and updates the parameters.
+        '''
+        Add a batch to Welford's method and EBS
+        '''
+        if not isinstance(sample,(int,float)):
+            assert len(sample) >= 1, f"Aborted algorithm: Samples must have at least 1 element, given sample array size {len(sample)}."
+        self.welf.add_all(sample)
+        self.mean_arr.append(float(self.welf.mean))
+        self.batch_size_arr.append(self.next_batch_size)
+        self.update_ct()
 
-        Parameters:
-        - sample (float): The sample value.
-        """
-        self.samples.append(sample)
-        self.sample_sum += sample
-        cur_mean = np.divide(self.sample_sum, self.current_t)
-        self.running_mean.append(cur_mean)
-        self.welf.update(sample)
-        self.running_variance.append(np.square(self.welf.std))
-        self.current_t = self.current_t + 1
     def cond_check(self):
         """
         Checks if the EBA should stop or continue.
@@ -1219,8 +1213,6 @@ class eba_geo_marg():
         Returns:
         - bool: True if EBA should continue, False if EBA should stop.
         """
-        error = "Premature calling of condition check: should have at least {} samples, but only {} were given."
-        assert self.current_t >= self.beta**self.current_k, error.format(np.ceil(self.beta**self.current_k),self.current_t)
         return self.current_k == 0 or self.ct[-1] > self.epsilon
 
     def calc_ct(self):
@@ -1230,7 +1222,7 @@ class eba_geo_marg():
         Returns:
         - float: The c_t value.
         """
-        return np.sqrt(2*self.running_variance[-1]*self.x/self.current_t)+3*self.range_of_rndvar*self.x/self.current_t
+        return np.sqrt(2*self.get_var()*self.x/self.welf.count)+3*self.range_of_rndvar*self.x/self.welf.count
 
     def update_ct(self):
         """
@@ -1258,7 +1250,7 @@ class eba_geo_marg():
         Returns:
         - float: The latest estimated mean.
         """
-        return self.running_mean[-1]
+        return self.welf.mean
 
     def get_mean(self):
         """
@@ -1267,22 +1259,31 @@ class eba_geo_marg():
         Returns:
         - numpy.ndarray: The array of estimated means.
         """
-        return np.asarray(self.running_mean)
+        return self.mean_arr
 
     def get_var(self):
         """
-        Returns the array of variances.
+        Returns the population variance
 
         Returns:
         - numpy.ndarray: The array of variances.
         """
-        return np.asarray(self.running_variance)
-
-    def get_step(self):
+        return self.welf.var_p
+    
+    def get_num_samples(self):
         """
         Returns the current iteration/step.
 
         Returns:
         - int: The current iteration/step.
         """
-        return self.current_t
+        return self.welf.count
+    
+    def get_N(self):
+        """
+        Returns the current batch size.
+
+        Returns:
+        - numpy.ndarray: The sample counts at which the mean, std, etc have been tracked.
+        """
+        return np.cumsum(self.batch_size_arr)
