@@ -1070,7 +1070,6 @@ class eba_geo_marg():
     Methods:
     - add_sample(sample): Adds a sample to the list of samples and updates the parameters.
     - cond_check(): Checks if the EBA should stop or continue.
-    - inner_cond_check(): Checks if the inner loop condition is met.
     - calc_ct(): Calculates the c_t value for a given time t.
     - update_ct(): Updates the c_t value.
     - get_ct(): Returns the array of c_t values.
@@ -1120,23 +1119,9 @@ class eba_geo_marg():
         Returns:
         - bool: True if EBA should continue, False if EBA should stop.
         """
-        if self.current_k == 0:
-            return True
-        if self.ct[-1] > self.epsilon:
-            return True
-        else:
-            return False
-
-    def inner_cond_check(self):
-        """
-        Check if the inner loop condition is satisfied.
-
-        Returns:
-        - none
-        updates ct if the condition is satisfied
-        """
-        if self.current_t > np.floor(self.beta**self.current_k):
-            self.update_ct()
+        error = "Premature calling of condition check: should have at least {} samples, but only {} were given."
+        assert self.current_t > self.beta**self.current_k, error.format(np.ceil(self.beta**self.current_k),self.current_t)
+        return self.current_k == 0 or self.ct[-1] > self.epsilon:
 
     def calc_ct(self):
         """
