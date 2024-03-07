@@ -18,64 +18,159 @@ def hoeffding_bound(delta, epsilon, rng):
     return 0.5*np.log(2/delta)*rng**2/epsilon**2
 
 # Welford method to get the running standard deviation and the running mean
-
-class Welford():
+class Welford:
     """
-    Class for calculating the mean and standard deviation using the Welford's method.
+    based on https://github.com/a-mitani/welford
+    class Welford
+
+     Accumulator object for Welfords online / parallel variance algorithm.
 
     Attributes:
-        n (int): The number of data points.
-        M (float): The current mean.
-        S (float): The current sum of squared differences from the mean.
-
-    Methods:
-        update(x): Updates the mean and sum of squared differences with a new data point.
-        mean: Returns the current mean.
-        std: Returns the current standard deviation.
+        count (int): The number of accumulated samples.
+        mean (array(D,)): Mean of the accumulated samples.
+        var_s (array(D,)): Sample variance of the accumulated samples.
+        var_p (array(D,)): Population variance of the accumulated samples.
     """
 
-    def __init__(self, a_list=None):
-        self.n = 0
-        self.M = 0
-        self.S = 0
+    def __init__(self, elements=None):
+        """__init__
 
-    def update(self, x):
-        """
-        Updates the mean and sum of squared differences with a new data point.
+        Initialize with an optional data. 
+        For the calculation efficiency, Welford's method is not used on the initialization process.
 
         Args:
-            x (float): The new data point.
+            elements (array(S, D)): data samples.
 
-        Returns:
-            None
         """
-        self.n += 1
-        newM = self.M + (x - self.M) / self.n
-        newS = self.S + (x - self.M) * (x - newM)
-        self.M = newM
-        self.S = newS
+
+        # Initialize instance attributes
+        if elements is None:
+            self.__shape = None
+            # current attribute values
+            self.__count = 0
+            self.__m = None
+            self.__s = None
+            # previous attribute values for rollbacking
+            self.__count_old = None
+            self.__m_old = None
+            self.__s_old = None
+
+        else:
+            self.__shape = elements[0].shape
+            # current attribute values
+            self.__count = elements.shape[0]
+            self.__m = np.mean(elements, axis=0)
+            self.__s = np.var(elements, axis=0, ddof=0) * elements.shape[0]
+            # previous attribute values for rollbacking
+            self.__count_old = None
+            self.__init_old_with_nan()
+
+    @property
+    def count(self):
+        return self.__count
 
     @property
     def mean(self):
-        """
-        Returns the current mean.
-
-        Returns:
-            float: The current mean.
-        """
-        return self.M
+        return self.__m
 
     @property
-    def std(self):
-        """
-        Returns the current standard deviation.
+    def var_s(self):
+        return self.__getvars(ddof=1)
 
-        Returns:
-            float: The current standard deviation.
+    @property
+    def var_p(self):
+        return self.__getvars(ddof=0)
+
+    def add(self, element, backup_flg=True):
+        """ add
+
+        add one data sample.
+
+        Args:
+            element (array(D, )): data sample.
+            backup_flg (boolean): if True, backup previous state for rollbacking.
+
         """
-        if self.n == 1:
-            return 0
-        return np.sqrt(self.S / (self.n - 1))
+        # Initialize if not yet.
+        if self.__shape is None:
+            self.__shape = element.shape
+            self.__m = np.zeros(element.shape)
+            self.__s = np.zeros(element.shape)
+            self.__init_old_with_nan()
+        # argument check if already initialized
+        else:
+            assert element.shape == self.__shape
+
+        # backup for rollbacking
+        if backup_flg:
+            self.__backup_attrs()
+
+        # Welford's algorithm
+        self.__count += 1
+        delta = element - self.__m
+        self.__m += delta / self.__count
+        self.__s += delta * (element - self.__m)
+
+    def add_all(self, elements, backup_flg=True):
+        """ add_all
+
+        add multiple data samples.
+
+        Args:
+            elements (array(S, D)): data samples.
+            backup_flg (boolean): if True, backup previous state for rollbacking.
+
+        """
+        # backup for rollbacking
+        if backup_flg:
+            self.__backup_attrs()
+
+        for elem in elements:
+            self.add(elem, backup_flg=False)
+
+    def rollback(self):
+        self.__count = self.__count_old
+        self.__m[...] = self.__m_old[...]
+        self.__s[...] = self.__s_old[...]
+
+    def merge(self, other, backup_flg=True):
+        """Merge this accumulator with another one."""
+        # backup for rollbacking
+        if backup_flg:
+            self.__backup_attrs()
+
+        count = self.__count + other.__count
+        delta = self.__m - other.__m
+        delta2 = delta * delta
+        m = (self.__count * self.__m + other.__count * other.__m) / count
+        s = self.__s + other.__s + delta2 * (self.__count * other.__count) / count
+
+        self.__count = count
+        self.__m = m
+        self.__s = s
+
+    def __getvars(self, ddof):
+        if self.__count <= 0:
+            return None
+        min_count = ddof
+        if self.__count <= min_count:
+            return np.full(self.__shape, np.nan)
+        else:
+            return self.__s / (self.__count - ddof)
+
+    def __backup_attrs(self):
+        if self.__shape is None:
+            pass
+        else:
+            self.__count_old = self.__count
+            self.__m_old[...] = self.__m[...]
+            self.__s_old[...] = self.__s[...]
+
+    def __init_old_with_nan(self):
+        self.__m_old = np.empty(self.__shape)
+        self.__m_old[...] = np.nan
+        self.__s_old = np.empty(self.__shape)
+        self.__s_old[...] = np.nan
 
 
 class ebs_simple():
