@@ -18,159 +18,64 @@ def hoeffding_bound(delta, epsilon, rng):
     return 0.5*np.log(2/delta)*rng**2/epsilon**2
 
 # Welford method to get the running standard deviation and the running mean
-class Welford:
-    """
-    based on https://github.com/a-mitani/welford
-    class Welford
 
-     Accumulator object for Welfords online / parallel variance algorithm.
+class Welford():
+    """
+    Class for calculating the mean and standard deviation using the Welford's method.
 
     Attributes:
-        count (int): The number of accumulated samples.
-        mean (array(D,)): Mean of the accumulated samples.
-        var_s (array(D,)): Sample variance of the accumulated samples.
-        var_p (array(D,)): Population variance of the accumulated samples.
+        n (int): The number of data points.
+        M (float): The current mean.
+        S (float): The current sum of squared differences from the mean.
+
+    Methods:
+        update(x): Updates the mean and sum of squared differences with a new data point.
+        mean: Returns the current mean.
+        std: Returns the current standard deviation.
     """
 
-    def __init__(self, elements=None):
-        """__init__
+    def __init__(self, a_list=None):
+        self.n = 0
+        self.M = 0
+        self.S = 0
 
-        Initialize with an optional data. 
-        For the calculation efficiency, Welford's method is not used on the initialization process.
+    def update(self, x):
+        """
+        Updates the mean and sum of squared differences with a new data point.
 
         Args:
-            elements (array(S, D)): data samples.
+            x (float): The new data point.
 
+        Returns:
+            None
         """
-
-        # Initialize instance attributes
-        if elements is None:
-            self.__shape = None
-            # current attribute values
-            self.__count = 0
-            self.__m = None
-            self.__s = None
-            # previous attribute values for rollbacking
-            self.__count_old = None
-            self.__m_old = None
-            self.__s_old = None
-
-        else:
-            self.__shape = elements[0].shape
-            # current attribute values
-            self.__count = elements.shape[0]
-            self.__m = np.mean(elements, axis=0)
-            self.__s = np.var(elements, axis=0, ddof=0) * elements.shape[0]
-            # previous attribute values for rollbacking
-            self.__count_old = None
-            self.__init_old_with_nan()
-
-    @property
-    def count(self):
-        return self.__count
+        self.n += 1
+        newM = self.M + (x - self.M) / self.n
+        newS = self.S + (x - self.M) * (x - newM)
+        self.M = newM
+        self.S = newS
 
     @property
     def mean(self):
-        return self.__m
+        """
+        Returns the current mean.
+
+        Returns:
+            float: The current mean.
+        """
+        return self.M
 
     @property
-    def var_s(self):
-        return self.__getvars(ddof=1)
-
-    @property
-    def var_p(self):
-        return self.__getvars(ddof=0)
-
-    def add(self, element, backup_flg=True):
-        """ add
-
-        add one data sample.
-
-        Args:
-            element (array(D, )): data sample.
-            backup_flg (boolean): if True, backup previous state for rollbacking.
-
+    def std(self):
         """
-        # Initialize if not yet.
-        if self.__shape is None:
-            self.__shape = element.shape
-            self.__m = np.zeros(element.shape)
-            self.__s = np.zeros(element.shape)
-            self.__init_old_with_nan()
-        # argument check if already initialized
-        else:
-            assert element.shape == self.__shape
+        Returns the current standard deviation.
 
-        # backup for rollbacking
-        if backup_flg:
-            self.__backup_attrs()
-
-        # Welford's algorithm
-        self.__count += 1
-        delta = element - self.__m
-        self.__m += delta / self.__count
-        self.__s += delta * (element - self.__m)
-
-    def add_all(self, elements, backup_flg=True):
-        """ add_all
-
-        add multiple data samples.
-
-        Args:
-            elements (array(S, D)): data samples.
-            backup_flg (boolean): if True, backup previous state for rollbacking.
-
+        Returns:
+            float: The current standard deviation.
         """
-        # backup for rollbacking
-        if backup_flg:
-            self.__backup_attrs()
-
-        for elem in elements:
-            self.add(elem, backup_flg=False)
-
-    def rollback(self):
-        self.__count = self.__count_old
-        self.__m[...] = self.__m_old[...]
-        self.__s[...] = self.__s_old[...]
-
-    def merge(self, other, backup_flg=True):
-        """Merge this accumulator with another one."""
-        # backup for rollbacking
-        if backup_flg:
-            self.__backup_attrs()
-
-        count = self.__count + other.__count
-        delta = self.__m - other.__m
-        delta2 = delta * delta
-        m = (self.__count * self.__m + other.__count * other.__m) / count
-        s = self.__s + other.__s + delta2 * (self.__count * other.__count) / count
-
-        self.__count = count
-        self.__m = m
-        self.__s = s
-
-    def __getvars(self, ddof):
-        if self.__count <= 0:
-            return None
-        min_count = ddof
-        if self.__count <= min_count:
-            return np.full(self.__shape, np.nan)
-        else:
-            return self.__s / (self.__count - ddof)
-
-    def __backup_attrs(self):
-        if self.__shape is None:
-            pass
-        else:
-            self.__count_old = self.__count
-            self.__m_old[...] = self.__m[...]
-            self.__s_old[...] = self.__s[...]
-
-    def __init_old_with_nan(self):
-        self.__m_old = np.empty(self.__shape)
-        self.__m_old[...] = np.nan
-        self.__s_old = np.empty(self.__shape)
-        self.__s_old[...] = np.nan
+        if self.n == 1:
+            return 0
+        return np.sqrt(self.S / (self.n - 1))
 
 
 class ebs_simple():
@@ -1161,7 +1066,6 @@ class eba_geo_marg():
     - current_t (int): The current t value.
     - cons (float): The constant value.
     - welf (Welford): The Welford object for calculating running variance.
-    - next_batch_size (int): the size of the next expected batch of samples
 
     Methods:
     - add_sample(sample): Adds a sample to the list of samples and updates the parameters.
@@ -1180,33 +1084,35 @@ class eba_geo_marg():
         self.delta = delta
         self.epsilon = epsilon
         self.range_of_rndvar = range_of_rndvar
-        self.batch_size_arr = []
-        self.mean_arr = []
+        self.samples = []
+        self.running_mean = [0]
+        self.sample_sum = 0
+        self.running_variance = [0]
         self.ct = []
         self.p = 1.1
         self.c = self.delta*(self.p-1)/self.p
         self.beta = beta
+        self.x = 0
         self.alpha = 0
         self.current_k = 0
         self.current_t = 1
         self.cons = 3/((delta*(self.p-1))/self.p)
         self.welf = Welford()
-    
-    @property
-    def next_batch_size(self):
-        return int(np.ceil(self.beta**self.current_k))
 
     def add_sample(self, sample):
-        '''
-        Add a batch to Welford's method and EBS
-        '''
-        if not isinstance(sample,(int,float)):
-            assert len(sample) >= 1, f"Aborted algorithm: Samples must have at least 1 element, given sample array size {len(sample)}."
-        self.welf.add_all(sample)
-        self.mean_arr.append(float(self.welf.mean))
-        self.batch_size_arr.append(self.next_batch_size)
-        self.update_ct()
+        """
+        Adds a sample to the list of samples and updates the parameters.
 
+        Parameters:
+        - sample (float): The sample value.
+        """
+        self.samples.append(sample)
+        self.sample_sum += sample
+        cur_mean = np.divide(self.sample_sum, self.current_t)
+        self.running_mean.append(cur_mean)
+        self.welf.update(sample)
+        self.running_variance.append(np.square(self.welf.std))
+        self.current_t = self.current_t + 1
     def cond_check(self):
         """
         Checks if the EBA should stop or continue.
@@ -1214,9 +1120,6 @@ class eba_geo_marg():
         Returns:
         - bool: True if EBA should continue, False if EBA should stop.
         """
-<<<<<<< HEAD
-        return self.current_k == 0 or self.ct[-1] > self.epsilon
-=======
         if self.current_k == 0:
             return True
         if self.ct[-1] > self.epsilon:
@@ -1234,7 +1137,6 @@ class eba_geo_marg():
         """
         if self.current_t > np.floor(self.beta**self.current_k):
             self.update_ct()
->>>>>>> parent of 35e6d8d (removed inner_cond_check and shortened cond_check)
 
     def calc_ct(self):
         """
@@ -1243,16 +1145,16 @@ class eba_geo_marg():
         Returns:
         - float: The c_t value.
         """
-        return np.sqrt(2*self.get_var()*self.x/self.welf.count)+3*self.range_of_rndvar*self.x/self.welf.count
+        return np.sqrt(2*self.running_variance[-1]*self.x/self.current_t)+3*self.range_of_rndvar*self.x/self.current_t
 
     def update_ct(self):
         """
         Updates the c_t value.
         """
         self.current_k += 1
-        self.alpha = np.ceil(self.beta**self.current_k) / \
-            np.ceil(self.beta**self.current_k-1)
-        self.x = -self.alpha*np.log(self.c/3*(self.current_k**self.p))
+        self.alpha = np.floor(self.beta**self.current_k) / \
+            np.floor(self.beta**(self.current_k-1))
+        self.x = -self.alpha*np.log(self.c/(3*(self.current_k**self.p)))
         self.ct.append(self.calc_ct())
 
     def get_ct(self):
@@ -1271,7 +1173,7 @@ class eba_geo_marg():
         Returns:
         - float: The latest estimated mean.
         """
-        return self.welf.mean
+        return self.running_mean[-1]
 
     def get_mean(self):
         """
@@ -1280,31 +1182,22 @@ class eba_geo_marg():
         Returns:
         - numpy.ndarray: The array of estimated means.
         """
-        return self.mean_arr
+        return np.asarray(self.running_mean)
 
     def get_var(self):
         """
-        Returns the population variance
+        Returns the array of variances.
 
         Returns:
         - numpy.ndarray: The array of variances.
         """
-        return self.welf.var_p
-    
-    def get_num_samples(self):
+        return np.asarray(self.running_variance)
+
+    def get_step(self):
         """
         Returns the current iteration/step.
 
         Returns:
         - int: The current iteration/step.
         """
-        return self.welf.count
-    
-    def get_N(self):
-        """
-        Returns the current batch size.
-
-        Returns:
-        - numpy.ndarray: The sample counts at which the mean, std, etc have been tracked.
-        """
-        return np.cumsum(self.batch_size_arr)
+        return self.current_t
