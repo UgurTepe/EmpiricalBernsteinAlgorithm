@@ -2,22 +2,27 @@ import numpy as np
 '''
                 A collection of various stopping algorithm.
  ------------ ------------ Relative Accuracy  ------------ ------------
-ebs_simple   : basic ebs algorithm
-ebs_dual     : upper and lower bound version, improved ver. of ebs_simple
-
-nas          : stopping algorithm based on Höffding's inequality
+Bernstein based:
+    ebs_simple   : basic ebs algorithm
+    ebs_dual     : upper and lower bound version, improved ver. of ebs_simple
+Höffding based:
+    nas          : stopping algorithm based on Höffding's inequality
  ------------ ------------ Absolute Accuracy  ------------ ------------
-eba_simple   : basic ebs algorithm
-eba_geo      : geometric sampling, improved ver. eba
-eba_geo_marg : geometric samp. + mid-interval stopping, improved ver. eba_geo
-
-nas_abs      : stopping algorithm based on Höffding's inequality
+Bernstein based:
+    eba_simple   : basic ebs algorithm
+    eba_geo      : geometric sampling, improved ver. eba
+    eba_geo_marg : geometric samp. + mid-interval stopping, improved ver. eba_geo
+Höffding based:
+    nas_abs      : stopping algorithm based on Höffding's inequality
 '''
-# t_min based on Höffding's bound 
+
+
 def hoeffding_bound(delta, epsilon, rng):
+    '''
+    Hoeffding bound solved for t_min. Calculates the minimum number of samples needed to achieve a given accuracy and confidence.
+    '''
     return 0.5*np.log(2/delta)*rng**2/epsilon**2
 
-# Welford method to get the running standard deviation and the running mean
 
 class Welford():
     """
@@ -112,7 +117,7 @@ class ebs_simple():
     - get_var(): Returns the array of variances.
     - get_step(): Returns the current step/iteration.
     """
-    
+
     def __init__(self, delta=0.1, epsilon=0.1, range_of_rndvar=1):
         """
         Initialize the EBS algorithm with the given parameters.
@@ -450,6 +455,7 @@ class nas():
     - get_mean(): Returns the array of estimated means.
     - get_step(): Returns the current step/iteration.
     """
+
     def __init__(self, delta=0.1, epsilon=0.1, range_of_rndvar=1):
         """
         Initialize the NAS algorithm with the given parameters.
@@ -514,7 +520,8 @@ class nas():
         - float: The value of c_t.
         """
         dt = (self.current_step * (self.current_step + 1)) / self.delta
-        result = self.range_of_rndvar * np.sqrt(np.log(dt) / (2 * self.current_step))
+        result = self.range_of_rndvar * \
+            np.sqrt(np.log(dt) / (2 * self.current_step))
         return result
 
     def get_ct(self):
@@ -749,7 +756,7 @@ class nas_abs():
     - get_mean(): Returns the array of estimated means.
     - get_step(): Returns the current iteration/step.
     """
-    
+
     def __init__(self, delta=0.1, epsilon=0.1, range_of_rndvar=1):
         """
         Initialize the NAS-ABS algorithm with the given parameters.
@@ -814,7 +821,8 @@ class nas_abs():
         - float: The calculated c_t value.
         """
         dt = (self.current_step * (self.current_step + 1)) / self.delta
-        result = self.range_of_rndvar * np.sqrt(np.log(dt) / (2 * self.current_step))
+        result = self.range_of_rndvar * \
+            np.sqrt(np.log(dt) / (2 * self.current_step))
         return result
 
     def get_ct(self):
@@ -852,6 +860,7 @@ class nas_abs():
         - int: The current iteration/step.
         """
         return self.current_step
+
 
 class eba_geo():
     """
@@ -891,7 +900,7 @@ class eba_geo():
     - get_var(): Returns the array of variances.
     - get_step(): Returns the current iteration/step.
     """
-    
+
     def __init__(self, delta=0.1, epsilon=0.1, range_of_rndvar=1, beta=1.1):
         """
         Initialize the EBA algorithm with the given parameters.
@@ -925,7 +934,6 @@ class eba_geo():
         - sample: The sample to be added.
         """
 
-
         # Insert new sample
         self.samples.append(sample)
 
@@ -941,7 +949,7 @@ class eba_geo():
         self.running_variance.append(np.square(self.welf.std))
         # Update current step
         self.current_t = self.current_t + 1
-        
+
     def cond_check(self):
         """
         Check if the EBA algorithm should stop.
@@ -1035,6 +1043,7 @@ class eba_geo():
         """
         return self.current_t
 
+
 class eba_geo_marg():
     """
     Empirical Bernstein Algorithm with Geometric sampling and mid-interval stopping.
@@ -1046,7 +1055,7 @@ class eba_geo_marg():
     - delta (float): The confidence parameter. Default is 0.1.
     - epsilon (float): Accuracy threshold. Default is 0.1.
     - range_of_rndvar (float): The range of the random variable. Default is 1.
-    - beta (float): The scaling factor. Default is 1.1.
+    - beta (float): batch sampling parameter. Default is 1.1.
 
     Attributes:
     - delta (float): The confidence parameter.
@@ -1059,7 +1068,7 @@ class eba_geo_marg():
     - ct (list): The list of c_t values.
     - p (float): The parameter p.
     - c (float): The parameter c.
-    - beta (float): The scaling factor.
+    - beta (float): batch sampling parameter.
     - x (float): The parameter x.
     - alpha (float): The parameter alpha.
     - current_k (int): The current k value.
@@ -1113,6 +1122,10 @@ class eba_geo_marg():
         self.welf.update(sample)
         self.running_variance.append(np.square(self.welf.std))
         self.current_t = self.current_t + 1
+
+        # Inner loop condition check
+        self.inner_cond_check()
+
     def cond_check(self):
         """
         Checks if the EBA should stop or continue.
@@ -1137,6 +1150,182 @@ class eba_geo_marg():
         """
         if self.current_t > np.floor(self.beta**self.current_k):
             self.update_ct()
+
+    def calc_ct(self):
+        """
+        Calculates the c_t value for a given time t.
+
+        Returns:
+        - float: The c_t value.
+        """
+        return np.sqrt(2*self.running_variance[-1]*self.x/self.current_t)+3*self.range_of_rndvar*self.x/self.current_t
+
+    def update_ct(self):
+        """
+        Updates the c_t value.
+        """
+        self.current_k += 1
+        self.alpha = np.floor(self.beta**self.current_k) / \
+            np.floor(self.beta**(self.current_k-1))
+        self.x = -self.alpha*np.log(self.c/(3*(self.current_k**self.p)))
+        self.ct.append(self.calc_ct())
+
+    def get_ct(self):
+        """
+        Returns the array of c_t values.
+
+        Returns:
+        - numpy.ndarray: The array of c_t values.
+        """
+        return np.asarray(self.ct)
+
+    def get_estimate(self):
+        """
+        Returns the latest estimated mean.
+
+        Returns:
+        - float: The latest estimated mean.
+        """
+        return self.running_mean[-1]
+
+    def get_mean(self):
+        """
+        Returns the array of estimated means.
+
+        Returns:
+        - numpy.ndarray: The array of estimated means.
+        """
+        return np.asarray(self.running_mean)
+
+    def get_var(self):
+        """
+        Returns the array of variances.
+
+        Returns:
+        - numpy.ndarray: The array of variances.
+        """
+        return np.asarray(self.running_variance)
+
+    def get_step(self):
+        """
+        Returns the current iteration/step.
+
+        Returns:
+        - int: The current iteration/step.
+        """
+        return self.current_t
+
+class eba_mod():
+    """
+    Empirical Bernstein Algorithm with Geometric sampling and mid-interval stopping.
+
+    This class implements the Empirical Bernstein Algorithm (EBA) with geometric sampling and mid-interval stopping.
+    It provides methods to add samples, update parameters, and retrieve estimates of mean, variance, and more.
+
+    Parameters:
+    - delta (float): The confidence parameter. Default is 0.1.
+    - epsilon (float): Accuracy threshold. Default is 0.1.
+    - range_of_rndvar (float): The range of the random variable. Default is 1.
+    - beta (float): batch sampling parameter. Default is 1.1.
+
+    Attributes:
+    - delta (float): The confidence parameter.
+    - epsilon (float): Accuracy threshold.
+    - range_of_rndvar (float): The range of the random variable.
+    - samples (list): The list of samples.
+    - running_mean (list): The list of running means.
+    - sample_sum (float): The sum of all samples.
+    - running_variance (list): The list of running variances.
+    - ct (list): The list of c_t values.
+    - p (float): The parameter p.
+    - c (float): The parameter c.
+    - beta (float): batch sampling parameter.
+    - x (float): The parameter x.
+    - alpha (float): The parameter alpha.
+    - current_k (int): The current k value.
+    - current_t (int): The current t value.
+    - cons (float): The constant value.
+    - welf (Welford): The Welford object for calculating running variance.
+
+    Methods:
+    - add_sample(sample): Adds a sample to the list of samples and updates the parameters.
+    - cond_check(): Checks if the EBA should stop or continue.
+    - inner_cond_check(): Checks if the inner loop condition is met.
+    - calc_ct(): Calculates the c_t value for a given time t.
+    - update_ct(): Updates the c_t value.
+    - get_ct(): Returns the array of c_t values.
+    - get_estimate(): Returns the latest estimated mean.
+    - get_mean(): Returns the array of estimated means.
+    - get_var(): Returns the array of variances.
+    - get_step(): Returns the current iteration/step.
+    """
+
+    def __init__(self, delta=0.1, epsilon=0.1, range_of_rndvar=1, beta=1.1):
+        self.delta = delta
+        self.epsilon = epsilon
+        self.range_of_rndvar = range_of_rndvar
+        self.samples = []
+        self.running_mean = [0]
+        self.sample_sum = 0
+        self.running_variance = [0]
+        self.ct = []
+        self.p = 1.1
+        self.c = self.delta*(self.p-1)/self.p
+        self.beta = beta
+        self.x = 0
+        self.alpha = 0
+        self.current_k = 0
+        self.current_t = 1
+        self.cons = 3/((delta*(self.p-1))/self.p)
+        self.welf = Welford()
+        self.no_check_count = 15
+        self.check_counter = 0
+
+    def add_sample(self, sample):
+        """
+        Adds a sample to the list of samples and updates the parameters.
+
+        Parameters:
+        - sample (float): The sample value.
+        """
+        self.samples.append(sample)
+        self.sample_sum += sample
+        cur_mean = np.divide(self.sample_sum, self.current_t)
+        self.running_mean.append(cur_mean)
+        self.welf.update(sample)
+        self.running_variance.append(np.square(self.welf.std))
+        self.current_t = self.current_t + 1
+        
+        self.inner_cond_check()
+
+    def cond_check(self):
+        """
+        Checks if the EBA should stop or continue.
+
+        Returns:
+        - bool: True if EBA should continue, False if EBA should stop.
+        """
+        if self.current_k == 0:
+            return True
+        if self.ct[-1] > self.epsilon:
+            return True
+        else:
+            return False
+
+    def inner_cond_check(self):
+        """
+        Check if the inner loop condition is satisfied.
+
+        Returns:
+        - none
+        updates ct if the condition is satisfied
+        """
+        if self.current_t > np.floor(self.beta**self.current_k):
+            self.check_counter += 1
+            if self.no_check_count <= self.check_counter or self.check_counter == 0:
+                self.update_ct()
+            else:
+                self.ct.append(10)
 
     def calc_ct(self):
         """
