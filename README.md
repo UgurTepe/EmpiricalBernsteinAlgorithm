@@ -12,7 +12,7 @@ EBS
 
 
 # Overview
-This repository contains the Empirical Bernstein stopping algorithm in its original form, see[[paper](https://www.cs.toronto.edu/~vmnih/docs/ebstop.pdf)], our **modified version** and code for calculating the Höffding's bound.
+This repository contains the Empirical Bernstein stopping algorithm in its original form, see [paper](https://www.cs.toronto.edu/~vmnih/docs/ebstop.pdf), our **modified version** and code for calculating the Höffding's bound.
 
 # Documentation
 See [notebook](/tutorial.ipynb) or directly inside the code.
