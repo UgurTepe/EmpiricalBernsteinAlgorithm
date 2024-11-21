@@ -15,7 +15,7 @@ a = 0
 b = 1
 delta = 0.1
 epsilon = 0.01
-l = 1 #Varying this adjust the variance, while keeping the mean the same; sigma² = (b-a)²/(12l)
+l = 10 #Varying this adjust the variance, while keeping the mean the same; sigma² = (b-a)²/(12l)
 
 alg = EBS(epsilon=epsilon, delta=delta, range_of_rndvar=b - a)
 
