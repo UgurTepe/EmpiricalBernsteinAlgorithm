@@ -54,9 +54,8 @@ print('No. Samples:',round(ebs.get_numsamples()))
 ```
 # Data for Examples
 For one of the example files, additional data is required.
-As the files are fairly large ~400mb, they are not included in this repository but can be downloaded via [figshare](/requirements.txt) and inserted such into the file structure:
+As the files are fairly large ~400mb, they are not included in this repository but can be downloaded on [figshare]((https://doi.org/10.6084/m9.figshare.27879525.v)) and inserted into the following path:
 ```dep/samples_gs/```
-Files are hosted on figshare and can be downloaded [here](https://doi.org/10.6084/m9.figshare.27879525.v1).
 
 # License
 This project is covered under the **Apache 2.0 License**.
